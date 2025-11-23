@@ -1,0 +1,9 @@
+@import './journal.css';
+
+/* base overrides for the journal theme */
+body { font-family: Georgia, 'Times New Roman', serif; }
+input { margin: 6px 0; }
+label { display: block; margin-top: 8px }
+
+/* Apply journal-theme class to body when present */
+/* We'll add the class on the client so it doesn't affect SSR unexpectedly */
