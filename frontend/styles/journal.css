@@ -107,6 +107,33 @@ body.journal-theme header a.button-like:hover { opacity: 0.95 }
   padding: 0;
 }
 
+/* Two-column layout for journals + sidebar tracker */
+.journals-container { display: flex; gap: 20px }
+.journals-container .main { flex: 1 }
+.journals-container .sidebar { width: 300px }
+.journals-container .sidebar .habit-item { display:flex; align-items:center; justify-content:space-between; gap:10px }
+.journals-container .sidebar .habit-item .meta { font-size:12px; color:#666 }
+
+/* Habit week row and day button */
+.habit-week { display:flex; gap:8px }
+.habit-day {
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  background: transparent;
+  font-size: 12px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 140ms ease, color 140ms ease, transform 120ms ease;
+}
+.habit-day.done { background: #28a745; color: #fff; border-color: #23823a }
+.habit-day.not-done { background: #fff; color: #333 }
+.habit-day:hover { transform: translateY(-2px) }
+
 .journal-card {
   position: relative;
   background: #fff;
@@ -174,6 +201,35 @@ body.journal-theme header a.button-like:hover { opacity: 0.95 }
 .journal-card .card-actions { margin-top:10px; display:flex; gap:8px }
 .journal-card .card-actions .edit { background: #7a4b2a; color: #fff; border:none; padding:6px 8px; border-radius:4px; cursor:pointer }
 .journal-card .card-actions .delete { background: #b85a3a; color:#fff; border:none; padding:6px 8px; border-radius:4px; cursor:pointer }
+/* Habit toggle styles */
+.journal-card .card-actions .habit-toggle {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border-radius: 50%;
+  border: 2px solid #bdbdbd;
+  background: transparent;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 120ms ease, border-color 160ms ease, background-color 160ms ease;
+}
+.journal-card .card-actions .habit-toggle::after {
+  content: '';
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: transparent;
+  display: block;
+  transition: transform 160ms ease, background-color 160ms ease;
+  transform: scale(0);
+}
+.journal-card .card-actions .habit-toggle.not-done { border-color: #bdbdbd }
+.journal-card .card-actions .habit-toggle.not-done::after { background: transparent; transform: scale(0) }
+.journal-card .card-actions .habit-toggle.done { border-color: #28a745; background: rgba(40,167,69,0.06) }
+.journal-card .card-actions .habit-toggle.done::after { background: #28a745; transform: scale(1) }
+.journal-card .card-actions .habit-toggle:hover { transform: scale(1.06) }
 
 @media (max-width: 1100px) {
   .journal-grid { grid-template-columns: repeat(3, 1fr) }

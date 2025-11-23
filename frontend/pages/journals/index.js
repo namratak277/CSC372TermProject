@@ -30,6 +30,53 @@ export default function Journals() {
 
   useEffect(() => { load() }, [])
 
+  // Local habit tracker (stored in localStorage). Separate from journal entries.
+  const [habits, setHabits] = useState([])
+  const [newHabit, setNewHabit] = useState('')
+
+  // Weekday labels (Mon -> Sun)
+  const WEEK_LABELS = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
+
+  useEffect(() => {
+    try {
+      const raw = typeof window !== 'undefined' ? localStorage.getItem('habit-tracker') : null
+      if (raw) setHabits(JSON.parse(raw))
+    } catch (e) {
+      console.error('Failed to load habits from localStorage', e)
+    }
+  }, [])
+
+  function persistHabits(next) {
+    try {
+      localStorage.setItem('habit-tracker', JSON.stringify(next))
+    } catch (e) {
+      console.error('Failed to save habits to localStorage', e)
+    }
+  }
+
+  function addHabit() {
+    const name = (newHabit || '').trim()
+    if (!name) return
+    // days: array of 7 booleans, Mon=0 ... Sun=6
+    const days = [false, false, false, false, false, false, false]
+    const h = { id: Date.now(), name, days }
+    const next = [h, ...habits]
+    setHabits(next)
+    persistHabits(next)
+    setNewHabit('')
+  }
+
+  function toggleHabitDay(habitId, dayIdx) {
+    const next = habits.map(h => {
+      if (h.id !== habitId) return h
+      const nd = (h.days || [false, false, false, false, false, false, false]).slice()
+      nd[dayIdx] = !nd[dayIdx]
+      return { ...h, days: nd }
+    })
+    setHabits(next)
+    persistHabits(next)
+  }
+
   return (
       <div style={{ padding: 20 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -69,20 +116,67 @@ export default function Journals() {
           }
         }}>Create entry</button>
       </div>
-      <div className="journal-grid">
-        {items.map(i => (
-          <JournalEntry
-            key={i.id}
-            entry={i}
-            onEdit={() => { window.location.href = `/journals/${i.id}` }}
-            onDelete={async (entry) => {
-              if (!confirm('Delete entry?')) return
-              const res = await fetch(`http://localhost:4000/api/journals/${entry.id}`, { method: 'DELETE', headers: authHeaders() })
-              if (res.ok) load()
-              else alert(JSON.stringify(await res.json()))
-            }}
-          />
-        ))}
+      <div className="journals-container" style={{ display: 'flex', gap: 20, marginTop: 18 }}>
+        <div className="main" style={{ flex: 1 }}>
+          <div className="journal-grid">
+            {items.map(i => (
+              <JournalEntry
+                key={i.id}
+                entry={i}
+                onEdit={() => { window.location.href = `/journals/${i.id}` }}
+                onDelete={async (entry) => {
+                  if (!confirm('Delete entry?')) return
+                  const res = await fetch(`http://localhost:4000/api/journals/${entry.id}`, { method: 'DELETE', headers: authHeaders() })
+                  if (res.ok) load()
+                  else alert(JSON.stringify(await res.json()))
+                }}
+              />
+            ))}
+          </div>
+        </div>
+
+        <aside className="sidebar" style={{ width: 320 }}>
+          <div style={{ padding: 12, border: '1px solid rgba(0,0,0,0.06)', borderRadius: 6, background: '#fff' }}>
+            <h3 style={{ marginTop: 0 }}>Habit Tracker</h3>
+            <p style={{ marginTop: 0, color: '#666', fontSize: 13 }}>Create and toggle your habits here (stored locally).</p>
+
+            <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+              <input value={newHabit} onChange={e => setNewHabit(e.target.value)} placeholder="New habit (e.g. Run)" style={{ flex: 1 }} />
+              <button onClick={addHabit} style={{ padding: '6px 8px' }}>Add</button>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 12 }}>
+              {habits.length === 0 && <div style={{ color: '#777' }}>No habits yet — add one above.</div>}
+              {habits.map(h => (
+                <div key={h.id} className="habit-item" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 14, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{h.name}</div>
+                    </div>
+                    <div style={{ fontSize: 12, color: '#666' }}>Weekly</div>
+                  </div>
+                  <div className="habit-week" style={{ display: 'flex', gap: 8 }}>
+                    {WEEK_LABELS.map((lbl, idx) => {
+                      const done = !!(h.days && h.days[idx])
+                      return (
+                        <button
+                          key={idx}
+                          onClick={() => toggleHabitDay(h.id, idx)}
+                          className={`habit-day ${done ? 'done' : 'not-done'}`}
+                          title={`${lbl} ${done ? 'completed' : 'mark completed'}`}
+                          aria-pressed={done ? 'true' : 'false'}
+                          style={{ width: 30, height: 30 }}
+                        >
+                          {lbl}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </aside>
       </div>
       </div>
   )

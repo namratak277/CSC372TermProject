@@ -38,11 +38,13 @@ app.get('/health', (req, res) => res.json({ ok: true, env: process.env.NODE_ENV 
 // Initialize DB models (create tables) before starting server
 const Journal = require('./models/journalModel');
 const Users = require('./models/userModel');
+const Habits = require('./models/habitModel');
 
 async function start() {
   try {
     await Users.init();
     await Journal.init();
+    await Habits.init();
     const server = app.listen(PORT, () => {
       console.log(`Daily Diary backend listening on http://localhost:${PORT}`);
     });

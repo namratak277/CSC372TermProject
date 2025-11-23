@@ -2,9 +2,8 @@
   "/_app": "pages/_app.js",
   "/_error": "pages/_error.js",
   "/_document": "pages/_document.js",
-  "/": "pages/index.js",
-  "/login": "pages/login.js",
-  "/forgot": "pages/forgot.js",
   "/journals": "pages/journals.js",
-  "/reset/[token]": "pages/reset/[token].js"
+  "/": "pages/index.js",
+  "/journals/[id]": "pages/journals/[id].js",
+  "/login": "pages/login.js"
 }

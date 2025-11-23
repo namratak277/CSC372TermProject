@@ -1,6 +1,6 @@
 import React from 'react'
 
-export default function JournalEntry({ entry, onEdit, onDelete }) {
+export default function JournalEntry({ entry, onEdit, onDelete, onToggleHabit }) {
   const snippet = (entry.content || '').length > 200 ? (entry.content || '').slice(0, 197) + '...' : (entry.content || '')
   function formatTime(ts) {
     if (!ts) return '—'
@@ -24,6 +24,7 @@ export default function JournalEntry({ entry, onEdit, onDelete }) {
       <div className="card-actions">
         <button onClick={() => onEdit && onEdit(entry)} className="edit">Edit</button>
         <button onClick={() => onDelete && onDelete(entry)} className="delete">Delete</button>
+        {/* Habit toggle moved to the separate sidebar habit tracker */}
       </div>
     </div>
   )

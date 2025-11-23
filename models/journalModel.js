@@ -13,26 +13,31 @@ async function init() {
       user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
       title TEXT,
       content TEXT,
+      habit_completed BOOLEAN DEFAULT FALSE,
+      habit_completed_at TIMESTAMP WITH TIME ZONE NULL,
       created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
     );
   `;
   await pool.query(sql);
+  // Add columns if table already existed (safe migration)
+  await pool.query("ALTER TABLE journals ADD COLUMN IF NOT EXISTS habit_completed BOOLEAN DEFAULT FALSE");
+  await pool.query("ALTER TABLE journals ADD COLUMN IF NOT EXISTS habit_completed_at TIMESTAMP WITH TIME ZONE NULL");
 }
 
 async function getAll() {
-  const r = await pool.query('SELECT id, user_id, title, content, created_at FROM journals ORDER BY created_at DESC');
+  const r = await pool.query('SELECT id, user_id, title, content, habit_completed, habit_completed_at, created_at FROM journals ORDER BY created_at DESC');
   return r.rows;
 }
 
 async function getById(id) {
-  const r = await pool.query('SELECT id, user_id, title, content, created_at FROM journals WHERE id = $1', [Number(id)]);
+  const r = await pool.query('SELECT id, user_id, title, content, habit_completed, habit_completed_at, created_at FROM journals WHERE id = $1', [Number(id)]);
   return r.rows[0] || null;
 }
 
-async function create({ user_id, title = '', content = '' } = {}) {
+async function create({ user_id, title = '', content = '', habit_completed = false } = {}) {
   const r = await pool.query(
-    'INSERT INTO journals (user_id, title, content) VALUES ($1, $2, $3) RETURNING id, user_id, title, content, created_at',
-    [user_id, title, content]
+    'INSERT INTO journals (user_id, title, content, habit_completed) VALUES ($1, $2, $3, $4) RETURNING id, user_id, title, content, habit_completed, habit_completed_at, created_at',
+    [user_id, title, content, habit_completed]
   );
   return r.rows[0];
 }
@@ -43,10 +48,19 @@ async function update(id, data = {}) {
   let idx = 1;
   if (data.title !== undefined) { fields.push(`title = $${idx++}`); values.push(data.title); }
   if (data.content !== undefined) { fields.push(`content = $${idx++}`); values.push(data.content); }
+  if (data.habit_completed !== undefined) {
+    fields.push(`habit_completed = $${idx++}`);
+    values.push(data.habit_completed);
+    if (data.habit_completed) {
+      fields.push(`habit_completed_at = now()`);
+    } else {
+      fields.push(`habit_completed_at = NULL`);
+    }
+  }
   // Always update created_at to now() when editing
   fields.push('created_at = now()');
   values.push(Number(id));
-  const sql = `UPDATE journals SET ${fields.join(', ')} WHERE id = $${idx} RETURNING id, title, content, created_at`;
+  const sql = `UPDATE journals SET ${fields.join(', ')} WHERE id = $${idx} RETURNING id, title, content, habit_completed, habit_completed_at, created_at`;
   const r = await pool.query(sql, values);
   return r.rows[0] || null;
 }
