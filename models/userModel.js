@@ -10,6 +10,11 @@ async function init() {
       id SERIAL PRIMARY KEY,
       username TEXT UNIQUE NOT NULL,
       password_hash TEXT NOT NULL,
+      google_id TEXT,
+      display_name TEXT,
+      first_name TEXT,
+      last_name TEXT,
+      email TEXT UNIQUE,
         created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
         reset_token TEXT,
         reset_expires TIMESTAMP WITH TIME ZONE
@@ -21,6 +26,12 @@ async function init() {
       .catch(() => {})
     await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_expires TIMESTAMP WITH TIME ZONE;")
       .catch(() => {})
+    // Add optional google-related columns if missing
+    await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS google_id TEXT").catch(()=>{});
+    await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS display_name TEXT").catch(()=>{});
+    await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS first_name TEXT").catch(()=>{});
+    await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS last_name TEXT").catch(()=>{});
+    await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS email TEXT").catch(()=>{});
 }
 
 async function createUser(username, passwordHash) {
@@ -29,6 +40,25 @@ async function createUser(username, passwordHash) {
     [username, passwordHash]
   );
   return r.rows[0];
+}
+
+// Create a user record from Google profile data
+async function createNewUser({ googleId, displayName, firstName, lastName, email }) {
+  const r = await pool.query(
+    'INSERT INTO users (google_id, display_name, first_name, last_name, email, password_hash) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, google_id, display_name, first_name, last_name, email, created_at',
+    [googleId, displayName, firstName, lastName, email, '']
+  );
+  return r.rows[0];
+}
+
+async function getUserByGoogleId(googleId) {
+  const r = await pool.query('SELECT * FROM users WHERE google_id = $1', [googleId]);
+  return r.rows[0] || null;
+}
+
+async function getUserById(id) {
+  const r = await pool.query('SELECT * FROM users WHERE id = $1', [Number(id)]);
+  return r.rows[0] || null;
 }
 
 async function findByUsername(username) {
@@ -56,4 +86,4 @@ async function updatePassword(id, passwordHash) {
   return r.rows[0] || null;
 }
 
-module.exports = { init, createUser, findByUsername, findById, setResetToken, findByResetToken, updatePassword };
+module.exports = { init, createUser, findByUsername, findById, setResetToken, findByResetToken, updatePassword, createNewUser, getUserByGoogleId, getUserById };

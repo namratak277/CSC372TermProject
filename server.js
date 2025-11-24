@@ -15,14 +15,27 @@ app.use((req, res, next) => {
 });
 app.use(express.json());
 
+// Session + Passport for OAuth
+const session = require('express-session');
+const passport = require('passport');
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'dev-session-secret',
+  resave: false,
+  saveUninitialized: false,
+}));
+
 // Use backend MVC routes located in project root routes/
 const journalsRouter = require('./routes/journals');
 const authRouter = require('./routes/auth');
 const quoteRouter = require('./routes/quote');
+const quotesRouter = require('./routes/quotes');
+const habitsRouter = require('./routes/habits');
 
 app.use('/api/journals', journalsRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/quote', quoteRouter);
+app.use('/api/quotes', quotesRouter);
+app.use('/api/habits', habitsRouter);
 
 // Root route: redirect to frontend dev server or provide info
 app.get('/', (req, res) => {
@@ -45,8 +58,12 @@ async function start() {
     await Users.init();
     await Journal.init();
     await Habits.init();
-    const server = app.listen(PORT, () => {
-      console.log(`Daily Diary backend listening on http://localhost:${PORT}`);
+    // Ensure quotes table exists
+    const Quotes = require('./models/quoteModel');
+    await Quotes.init();
+    // Bind explicitly to localhost to avoid potential permission issues
+    const server = app.listen(PORT, '127.0.0.1', () => {
+      console.log(`Daily Diary backend listening on http://127.0.0.1:${PORT}`);
     });
     server.on('error', (err) => {
       if (err && err.code === 'EADDRINUSE') {
