@@ -4,5 +4,8 @@
   "/_document": "pages/_document.js",
   "/": "pages/index.js",
   "/login": "pages/login.js",
-  "/journals": "pages/journals.js"
+  "/journals": "pages/journals.js",
+  "/reset/[token]": "pages/reset/[token].js",
+  "/forgot": "pages/forgot.js",
+  "/signup": "pages/signup.js"
 }
