@@ -16,11 +16,13 @@ export default function EditJournal() {
     return token ? { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' } : { 'Content-Type': 'application/json' }
   }
 
+  const API_BASE = typeof process !== 'undefined' && process.env && process.env.NEXT_PUBLIC_API_BASE ? process.env.NEXT_PUBLIC_API_BASE : 'http://localhost:4000'
+
   useEffect(() => {
     if (!id) return
     async function load() {
       try {
-        const r = await fetch(`http://localhost:4000/api/journals/${id}`, { headers: authHeaders() })
+        const r = await fetch(`${API_BASE}/api/journals/${id}`, { headers: authHeaders() })
         if (!r.ok) {
           setMsg('Failed to load entry: ' + r.status)
           setLoading(false)
@@ -44,7 +46,7 @@ export default function EditJournal() {
   async function save(e) {
     e.preventDefault()
     try {
-      const r = await fetch(`http://localhost:4000/api/journals/${id}`, {
+      const r = await fetch(`${API_BASE}/api/journals/${id}`, {
         method: 'PUT',
         headers: authHeaders(),
         body: JSON.stringify({ title, content })
@@ -66,7 +68,7 @@ export default function EditJournal() {
 
   async function toggleHabit() {
     try {
-      const r = await fetch(`http://localhost:4000/api/journals/${id}`, {
+      const r = await fetch(`${API_BASE}/api/journals/${id}`, {
         method: 'PUT',
         headers: authHeaders(),
         body: JSON.stringify({ habit_completed: !habitCompleted })

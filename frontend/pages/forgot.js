@@ -9,7 +9,8 @@ export default function Forgot() {
     e.preventDefault()
     setMsg('')
     try {
-      const r = await fetch('http://localhost:4000/api/auth/forgot', {
+      const API_BASE = typeof process !== 'undefined' && process.env && process.env.NEXT_PUBLIC_API_BASE ? process.env.NEXT_PUBLIC_API_BASE : 'http://localhost:4000'
+      const r = await fetch(`${API_BASE}/api/auth/forgot`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username })
       })

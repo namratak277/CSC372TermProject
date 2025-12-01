@@ -16,7 +16,7 @@ export default function Journals() {
 
   async function load() {
     try {
-      const r = await fetch('http://localhost:4000/api/journals', { headers: authHeaders() })
+      const r = await fetch(`${API_BASE}/api/journals`, { headers: authHeaders() })
       if (!r.ok) {
         const err = await r.text().catch(() => '');
         console.error('Failed to fetch journals:', r.status, err)
@@ -164,7 +164,7 @@ export default function Journals() {
             return
           }
           try {
-            const res = await fetch('http://localhost:4000/api/journals', {
+            const res = await fetch(`${API_BASE}/api/journals`, {
               method: 'POST',
               headers: authHeaders(),
               body: JSON.stringify({ title, content })
@@ -179,10 +179,10 @@ export default function Journals() {
               try { err = await res.json() } catch (e) { err = await res.text().catch(()=>'') }
               alert('Failed to create entry: ' + (err && err.error ? err.error : JSON.stringify(err)))
             }
-          } catch (e) {
-            console.error('Network error creating journal entry', e)
-            alert('Network error creating entry. Is the backend running on http://localhost:4000 ?')
-          }
+            } catch (e) {
+              console.error('Network error creating journal entry', e)
+              alert('Network error creating entry. Is the backend/API running?')
+            }
         }}>Create entry</button>
       </div>
       <div className="journals-container" style={{ display: 'flex', gap: 20, marginTop: 18 }}>
@@ -195,7 +195,7 @@ export default function Journals() {
                 onEdit={() => { window.location.href = `/journals/${i.id}` }}
                 onDelete={async (entry) => {
                   if (!confirm('Delete entry?')) return
-                  const res = await fetch(`http://localhost:4000/api/journals/${entry.id}`, { method: 'DELETE', headers: authHeaders() })
+                  const res = await fetch(`${API_BASE}/api/journals/${entry.id}`, { method: 'DELETE', headers: authHeaders() })
                   if (res.ok) load()
                   else alert(JSON.stringify(await res.json()))
                 }}

@@ -3,13 +3,14 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/router'
 
 export default function Header() {
+  const API_BASE = typeof process !== 'undefined' && process.env && process.env.NEXT_PUBLIC_API_BASE ? process.env.NEXT_PUBLIC_API_BASE : 'http://localhost:4000'
   const [username, setUsername] = useState(null)
   const router = useRouter()
 
   // Fetch current user from server when needed
   async function fetchMe(token) {
     try {
-      const r = await fetch('http://localhost:4000/api/auth/me', {
+      const r = await fetch(`${API_BASE}/api/auth/me`, {
         headers: { Authorization: 'Bearer ' + token }
       })
       if (r.ok) {

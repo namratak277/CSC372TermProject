@@ -7,7 +7,8 @@ export default function Login() {
 
   async function submit(e) {
     e.preventDefault()
-    const r = await fetch('http://localhost:4000/api/auth/login', {
+    const API_BASE = typeof process !== 'undefined' && process.env && process.env.NEXT_PUBLIC_API_BASE ? process.env.NEXT_PUBLIC_API_BASE : 'http://localhost:4000'
+    const r = await fetch(`${API_BASE}/api/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, password })
@@ -39,6 +40,16 @@ export default function Login() {
           </div>
           <button type="submit">Log in</button>
         </form>
+        <div style={{ marginTop: 16 }}>
+          <div style={{ marginBottom: 8 }}>Or</div>
+          {/* Google OAuth start - opens backend endpoint which will redirect back with a token */}
+          <a
+            href={(typeof process !== 'undefined' && process.env && process.env.NEXT_PUBLIC_API_BASE ? process.env.NEXT_PUBLIC_API_BASE : 'http://localhost:4000') + '/api/auth/google'}
+            style={{ display: 'inline-block', padding: '8px 12px', background: 'var(--accent)', color: '#fff', borderRadius: 4, textDecoration: 'none' }}
+          >
+            Continue with Google
+          </a>
+        </div>
         <div style={{ marginTop: 12 }}>
           <a href="/forgot">Forgot password?</a>
         </div>

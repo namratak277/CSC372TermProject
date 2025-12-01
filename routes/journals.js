@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const controller = require('../controllers/journalController');
-const auth = require('../middleware/auth');
+const auth = require('../auth');
 
 // All journal routes require authentication — entries are per-user
 // Single entry (must come before the list route to avoid matching '/')

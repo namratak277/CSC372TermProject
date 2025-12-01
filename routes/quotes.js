@@ -2,20 +2,29 @@ const express = require('express');
 const router = express.Router();
 const axios = require('axios');
 const Quote = require('../models/quoteModel');
-const auth = require('../middleware/auth');
+const auth = require('../auth');
 
-// Built-in fallback quotes used when external APIs are unreachable
-const BUILTIN_QUOTES = [
-  { content: "Life isn't about finding yourself. Life is about creating yourself.", author: 'George Bernard Shaw' },
-  { content: 'The only way to do great work is to love what you do.', author: 'Steve Jobs' },
-  { content: "Don't watch the clock; do what it does. Keep going.", author: 'Sam Levenson' },
-  { content: 'Keep your face always toward the sunshine—and shadows will fall behind you.', author: 'Walt Whitman' },
-  { content: 'The future depends on what you do today.', author: 'Mahatma Gandhi' }
-];
-
-function getBuiltinQuote() {
-  const q = BUILTIN_QUOTES[Math.floor(Math.random() * BUILTIN_QUOTES.length)];
-  return { ok: true, content: q.content, author: q.author, fetchedFrom: 'builtin' };
+// Helper to retry transient network errors (DNS issues like EAI_AGAIN) a few times
+async function fetchWithRetries(url, axiosOptions = {}, retries = 3, delayMs = 300) {
+  let attempt = 0;
+  while (true) {
+    try {
+      const res = await axios.get(url, axiosOptions);
+      return res;
+    } catch (err) {
+      attempt++;
+      const code = err && (err.code || (err.response && err.response.status));
+      // Consider retrying for DNS/network transient errors
+      const retryable = err && (err.code === 'EAI_AGAIN' || err.code === 'ENOTFOUND' || err.code === 'ECONNRESET' || err.code === 'ETIMEDOUT');
+      if (!retryable || attempt > retries) {
+        throw err;
+      }
+      // Exponential backoff
+      const wait = delayMs * Math.pow(2, attempt - 1);
+      console.warn(`Transient network error (${err.code || err.message}). Retrying ${attempt}/${retries} after ${wait}ms`);
+      await new Promise(r => setTimeout(r, wait));
+    }
+  }
 }
 
 // GET saved quotes (returns only the authenticated user's saved quotes)
@@ -92,10 +101,21 @@ router.get('/external', async (req, res) => {
     joinUrl(externalBase, 'quote/random')
   ];
 
+  // Add reliable fallback providers (tried after the primary candidates).
+  const FALLBACK_PROVIDERS = [
+    'https://nodejs-quoteapp.herokuapp.com',
+    'https://quotable.io'
+  ];
+  for (const fb of FALLBACK_PROVIDERS) {
+    candidates.push(fb);
+    candidates.push(joinUrl(fb, 'quote'));
+    candidates.push(joinUrl(fb, 'random'));
+  }
+
   let lastErr = null;
   for (const url of candidates) {
     try {
-      const r = await axios.get(url, { headers });
+      const r = await fetchWithRetries(url, { headers });
       if (r && (r.status >= 200 && r.status < 300)) {
         // Normalize common shapes
         let content = '';
@@ -130,14 +150,13 @@ router.get('/external', async (req, res) => {
         continue;
       }
       console.error(`External fetch error for ${url}:`, err.message || err);
-      // Return builtin fallback instead of failing
-      return res.json(getBuiltinQuote());
+      // Record error and try next candidate instead of returning immediately
+      continue;
     }
   }
 
   console.error('External quote fetch failed for all candidates', lastErr && (lastErr.message || lastErr));
-  // Return a built-in fallback quote so the frontend always has something to display
-  return res.json(getBuiltinQuote());
+  return res.status(502).json({ ok: false, error: 'External quote fetch failed for all candidates', details: lastErr && (lastErr.message || String(lastErr)) });
 });
 
 // GET random quote (explicit path). This route prioritizes calling the `/quote` path
@@ -158,7 +177,7 @@ router.get('/random', async (req, res) => {
 
   const primary = joinUrl(externalBase, 'quote');
   try {
-    const r = await axios.get(primary, { headers });
+    const r = await fetchWithRetries(primary, { headers });
     if (r && r.status >= 200 && r.status < 300) {
       const data = r.data || {};
       const content = data.quote || data.content || data.q || '';
@@ -187,10 +206,21 @@ router.get('/random', async (req, res) => {
     joinUrl(externalBase, 'quote/random')
   ];
 
+  // Add fallback providers for increased reliability
+  const FALLBACK_PROVIDERS = [
+    'https://nodejs-quoteapp.herokuapp.com',
+    'https://quotable.io'
+  ];
+  for (const fb of FALLBACK_PROVIDERS) {
+    candidates.push(fb);
+    candidates.push(joinUrl(fb, 'quote'));
+    candidates.push(joinUrl(fb, 'random'));
+  }
+
   let lastErr = null;
   for (const url of candidates) {
     try {
-      const r = await axios.get(url, { headers });
+      const r = await fetchWithRetries(url, { headers });
       if (r && (r.status >= 200 && r.status < 300)) {
         let content = '';
         let author = '';
@@ -224,14 +254,13 @@ router.get('/random', async (req, res) => {
         continue;
       }
       console.error(`External fetch error for ${url}:`, err.message || err);
-      // Return builtin fallback instead of failing
-      return res.json(getBuiltinQuote());
+      // Don't return immediately; try the next candidate provider
+      continue;
     }
   }
 
   console.error('External quote fetch failed for all candidates', lastErr && (lastErr.message || lastErr));
-  // Return a built-in fallback quote when external fetches fail
-  return res.json(getBuiltinQuote());
+  return res.status(502).json({ ok: false, error: 'External quote fetch failed for all candidates', details: lastErr && (lastErr.message || String(lastErr)) });
 });
 
 module.exports = router;

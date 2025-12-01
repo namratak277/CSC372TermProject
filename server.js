@@ -6,7 +6,8 @@ const app = express();
 const PORT = process.env.PORT || 4000;
 
 // Allow CORS from the frontend during development. Set FRONTEND_URL in .env if different.
-app.use(cors({ origin: process.env.FRONTEND_URL || 'http://localhost:3000' }));
+// Allow CORS from the frontend and support credentials for session cookies
+app.use(cors({ origin: process.env.FRONTEND_URL || 'http://localhost:3000', credentials: true }));
 
 // Simple request logger to help debug incoming requests
 app.use((req, res, next) => {
@@ -23,6 +24,28 @@ app.use(session({
   resave: false,
   saveUninitialized: false,
 }));
+
+// Configure passport strategies (if any) and initialize passport middleware
+try {
+  require('./auth/passport');
+  app.use(passport.initialize());
+  app.use(passport.session());
+} catch (e) {
+  console.warn('Passport configuration not loaded:', e && e.message);
+}
+
+// Informational startup log about Google OAuth configuration (helps diagnose 501 responses)
+try {
+  if (passport && passport.googleConfigured) {
+    console.log('Startup: Google OAuth is configured. OAuth routes are enabled.');
+  } else {
+    console.log('Startup: Google OAuth is NOT configured. `/api/auth/google` will return 501.');
+    console.log(' - Set env vars `clientID` and `clientSecret` (or `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET`).');
+    console.log(' - Optionally set `callbackURL` or `GOOGLE_CALLBACK_URL` to your callback path.');
+  }
+} catch (e) {
+  // ignore logging errors
+}
 
 // Use backend MVC routes located in project root routes/
 const journalsRouter = require('./routes/journals');
@@ -62,8 +85,8 @@ async function start() {
     const Quotes = require('./models/quoteModel');
     await Quotes.init();
     // Bind explicitly to localhost to avoid potential permission issues
-    const server = app.listen(PORT, '127.0.0.1', () => {
-      console.log(`Daily Diary backend listening on http://127.0.0.1:${PORT}`);
+    const server = app.listen(PORT, () => {
+      console.log(`Daily Diary backend listening on port ${PORT}`);
     });
     server.on('error', (err) => {
       if (err && err.code === 'EADDRINUSE') {
@@ -79,5 +102,15 @@ async function start() {
     process.exit(1);
   }
 }
+
+// Centralized error handler (returns JSON). Placed after routes and before server start.
+app.use((err, req, res, next) => {
+  console.error('Unhandled error:', err && (err.stack || err.message || err));
+  const status = (err && err.status) || 500;
+  const payload = { ok: false, error: err && (err.message || 'Internal server error') };
+  // In development expose stack
+  if (process.env.NODE_ENV !== 'production' && err && err.stack) payload.stack = err.stack;
+  res.status(status).json(payload);
+});
 
 start();

@@ -7,44 +7,33 @@ export default function Quote() {
   const [loading, setLoading] = useState(true)
 
   const API_BASE = typeof process !== 'undefined' && process.env && process.env.NEXT_PUBLIC_API_BASE ? process.env.NEXT_PUBLIC_API_BASE : 'http://localhost:4000'
+  const EXTERNAL_QUOTE_API = typeof process !== 'undefined' && process.env && process.env.NEXT_PUBLIC_QUOTE_API ? process.env.NEXT_PUBLIC_QUOTE_API : 'https://nodejs-quoteapp.herokuapp.com/quote'
 
   async function loadExternal() {
-    // Prefer the backend proxy which returns a builtin fallback when external
-    // APIs are unreachable. This ensures the UI shows a quote even offline.
+    // Call the external quote API directly (no backend proxy).
+    // This will fetch from NEXT_PUBLIC_QUOTE_API if set, otherwise nodejs-quoteapp.herokuapp.com
     setExternalError(null)
+    setLoading(true)
     try {
-      const r = await fetch(`${API_BASE}/api/quotes/random`)
-      if (r.ok) {
-        const j = await r.json()
-        if (j && j.ok) {
-          setExternal({ content: j.content || j.quote || (j.raw && j.raw.content) || '', author: j.author || '' })
-          return
-        }
+      const url = `${EXTERNAL_QUOTE_API}${EXTERNAL_QUOTE_API.includes('?') ? '&' : '?'}cb=${Date.now()}`
+      const r = await fetch(url)
+      if (!r.ok) {
+        const txt = await r.text().catch(() => '')
+        setExternalError(`External API error: ${r.status} ${txt}`)
+        setExternal(null)
+        return
       }
-      // If backend responded but not as expected, record and fall back to Quotable
-      try {
-        const text = await r.text().catch(() => '')
-        setExternalError(`Backend returned unexpected response: ${text}`)
-      } catch (e) {
-        setExternalError('Backend returned unexpected response')
-      }
-    } catch (backendErr) {
-      console.warn('Backend proxy unreachable, falling back to Quotable', backendErr)
-      setExternalError(backendErr && (backendErr.message || String(backendErr)))
-    }
-
-    // Fallback: try Quotable directly
-    try {
-      const r2 = await fetch('https://api.quotable.io/random')
-      if (!r2.ok) throw new Error(`Quotable returned ${r2.status}`)
-      const d = await r2.json()
-      setExternal({ content: d.content || '', author: d.author || '' })
+      const data = await r.json()
+      const content = data.quote || data.content || data.text || data.message || ''
+      const author = data.author || data.person || ''
+      setExternal({ content: content || '', author: author || '' })
       setExternalError(null)
-      return
     } catch (err) {
-      console.error('Quotable fetch failed', err)
-      // Keep externalError from backend attempt if present, otherwise set this
-      if (!externalError) setExternalError(err && (err.message || String(err)))
+      console.error('Failed to fetch external quote directly', err)
+      setExternalError(err && (err.message || String(err)))
+      setExternal(null)
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -174,7 +163,9 @@ export default function Quote() {
           “{external.content}” — {external.author || '—'}
           <div style={{ marginTop: 8 }}>
             <button onClick={saveExternal}>Save quote</button>
-            <button onClick={loadExternal} style={{ marginLeft: 8 }}>Refresh</button>
+            <button onClick={loadExternal} disabled={loading} style={{ marginLeft: 8 }}>
+              {loading ? 'Loading…' : 'Another quote'}
+            </button>
           </div>
         </blockquote>
       ) : (
