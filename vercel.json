@@ -1,7 +1,7 @@
 {
-  "buildCommand": "cd frontend && next build",
-  "devCommand": "cd frontend && next dev",
-  "installCommand": "npm install && cd frontend && npm install",
+  "buildCommand": "next build",
+  "devCommand": "next dev",
+  "installCommand": "npm install",
   "rewrites": [
     {
       "source": "/api/(.*)",
