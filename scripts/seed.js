@@ -11,7 +11,10 @@ if (!connectionString) {
   process.exit(1);
 }
 
-const pool = new Pool({ connectionString, ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false });
+const useSsl = connectionString && connectionString.includes('sslmode=require')
+  ? { rejectUnauthorized: false }
+  : (process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false);
+const pool = new Pool({ connectionString, ssl: useSsl });
 
 async function ensureTables() {
   await pool.query(`

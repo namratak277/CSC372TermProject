@@ -5,8 +5,9 @@ async function list(req, res) {
     // If authentication is used, return only this user's journals
     if (req.user && req.user.id) {
       const items = await Journal.getAll();
-      // filter for this user
-      const filtered = items.filter(i => i.user_id === req.user.id);
+      // filter for this user (coerce types to avoid string/number mismatch)
+      const uid = Number(req.user.id);
+      const filtered = items.filter(i => Number(i.user_id) === uid);
       return res.json(filtered);
     }
     const items = await Journal.getAll();
@@ -22,7 +23,7 @@ async function get(req, res) {
     const id = req.params.id;
     const item = await Journal.getById(id);
     if (!item) return res.status(404).json({ error: 'Not found' });
-    if (!req.user || req.user.id !== item.user_id) return res.status(403).json({ error: 'Forbidden' });
+    if (!req.user || Number(req.user.id) !== Number(item.user_id)) return res.status(403).json({ error: 'Forbidden' });
     res.json(item);
   } catch (err) {
     console.error(err);
@@ -48,9 +49,9 @@ async function update(req, res) {
     const id = req.params.id;
     // ensure ownership
     const items = await Journal.getAll();
-    const item = items.find(i => i.id === Number(id));
+    const item = items.find(i => Number(i.id) === Number(id));
     if (!item) return res.status(404).json({ error: 'Not found' });
-    if (!req.user || req.user.id !== item.user_id) return res.status(403).json({ error: 'Forbidden' });
+    if (!req.user || Number(req.user.id) !== Number(item.user_id)) return res.status(403).json({ error: 'Forbidden' });
     const updated = await Journal.update(id, req.body);
     if (!updated) return res.status(404).json({ error: 'Not found' });
     res.json(updated);
@@ -65,9 +66,9 @@ async function remove(req, res) {
     const id = req.params.id;
     // ensure ownership
     const items = await Journal.getAll();
-    const item = items.find(i => i.id === Number(id));
+    const item = items.find(i => Number(i.id) === Number(id));
     if (!item) return res.status(404).json({ error: 'Not found' });
-    if (!req.user || req.user.id !== item.user_id) return res.status(403).json({ error: 'Forbidden' });
+    if (!req.user || Number(req.user.id) !== Number(item.user_id)) return res.status(403).json({ error: 'Forbidden' });
     const ok = await Journal.remove(id);
     if (!ok) return res.status(404).json({ error: 'Not found' });
     res.json({ ok: true });

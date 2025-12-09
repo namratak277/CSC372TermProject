@@ -1,9 +1,25 @@
 const express = require('express');
 const cors = require('cors');
+const { Pool } = require('pg');
 require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 4000;
+
+// Basic startup env logging (non-sensitive)
+console.log('Startup: FRONTEND_URL =', process.env.FRONTEND_URL || 'http://localhost:3000');
+console.log('Startup: PORT =', PORT);
+if (process.env.MOTIVATIONAL_API_URL) console.log('Startup: MOTIVATIONAL_API_URL set');
+if (process.env.DATABASE_URL) {
+  try {
+    const parsedHost = new URL(process.env.DATABASE_URL).hostname;
+    console.log('Startup: DATABASE_URL host =', parsedHost);
+  } catch (e) {
+    console.log('Startup: DATABASE_URL present (could not parse host)');
+  }
+} else {
+  console.warn('Startup: DATABASE_URL is not set');
+}
 
 // Allow CORS from the frontend during development. Set FRONTEND_URL in .env if different.
 // Allow CORS from the frontend and support credentials for session cookies
@@ -50,13 +66,11 @@ try {
 // Use backend MVC routes located in project root routes/
 const journalsRouter = require('./routes/journals');
 const authRouter = require('./routes/auth');
-const quoteRouter = require('./routes/quote');
 const quotesRouter = require('./routes/quotes');
 const habitsRouter = require('./routes/habits');
 
 app.use('/api/journals', journalsRouter);
 app.use('/api/auth', authRouter);
-app.use('/api/quote', quoteRouter);
 app.use('/api/quotes', quotesRouter);
 app.use('/api/habits', habitsRouter);
 
@@ -69,7 +83,25 @@ app.get('/', (req, res) => {
 });
 
 // Health check
-app.get('/health', (req, res) => res.json({ ok: true, env: process.env.NODE_ENV || 'development' }));
+app.get('/health', (req, res) => res.json({ ok: true, env: process.env.NODE_ENV || 'development', db: process.env.DB_OK !== 'false' }));
+
+// DB health check (lightweight SELECT 1)
+const connectionString = process.env.DATABASE_URL || '';
+const useSsl = connectionString && connectionString.includes('sslmode=require')
+  ? { rejectUnauthorized: false }
+  : (process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false);
+const healthPool = connectionString ? new Pool({ connectionString, ssl: useSsl }) : null;
+
+app.get('/health/db', async (req, res) => {
+  if (!healthPool) return res.status(500).json({ ok: false, error: 'DATABASE_URL not set' });
+  try {
+    await healthPool.query('SELECT 1');
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error('DB health check failed', err && (err.message || err));
+    return res.status(500).json({ ok: false, error: err && (err.message || 'DB error') });
+  }
+});
 
 // Initialize DB models (create tables) before starting server
 const Journal = require('./models/journalModel');
@@ -77,30 +109,37 @@ const Users = require('./models/userModel');
 const Habits = require('./models/habitModel');
 
 async function start() {
-  try {
-    await Users.init();
-    await Journal.init();
-    await Habits.init();
-    // Ensure quotes table exists
-    const Quotes = require('./models/quoteModel');
-    await Quotes.init();
-    // Bind explicitly to localhost to avoid potential permission issues
-    const server = app.listen(PORT, () => {
-      console.log(`Daily Diary backend listening on port ${PORT}`);
-    });
-    server.on('error', (err) => {
-      if (err && err.code === 'EADDRINUSE') {
-        console.error(`Port ${PORT} is in use. Kill the process using it or set PORT to a free port.`);
-        process.exit(1);
-      } else {
-        console.error('Server error', err);
-        process.exit(1);
-      }
-    });
-  } catch (err) {
-    console.error('Failed to initialize database:', err);
-    process.exit(1);
-  }
+  // Start the server immediately without waiting for DB init
+  const server = app.listen(PORT, () => {
+    console.log(`Daily Diary backend listening on port ${PORT}`);
+  });
+  
+  // Initialize DB in background (non-blocking)
+  (async () => {
+    try {
+      await Users.init();
+      await Journal.init();
+      await Habits.init();
+      // Ensure quotes table exists
+      const Quotes = require('./models/quoteModel');
+      await Quotes.init();
+      console.log('Database initialization completed successfully');
+    } catch (err) {
+      console.error('Failed to initialize database:', err && (err.stack || err.message || err));
+      console.warn('Database features may be degraded or unavailable.');
+      process.env.DB_OK = 'false';
+    }
+  })();
+  
+  server.on('error', (err) => {
+    if (err && err.code === 'EADDRINUSE') {
+      console.error(`Port ${PORT} is in use. Kill the process using it or set PORT to a free port.`);
+      process.exit(1);
+    } else {
+      console.error('Server error', err);
+      process.exit(1);
+    }
+  });
 }
 
 // Centralized error handler (returns JSON). Placed after routes and before server start.
@@ -113,4 +152,7 @@ app.use((err, req, res, next) => {
   res.status(status).json(payload);
 });
 
-start();
+start().catch(err => {
+  console.error('Fatal error in start():', err && (err.stack || err.message || err));
+  process.exit(1);
+});

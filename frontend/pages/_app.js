@@ -33,6 +33,17 @@ export default function MyApp({ Component, pageProps }) {
         if (username) localStorage.setItem('username', username)
         // notify app that auth changed
         window.dispatchEvent(new Event('authChanged'))
+        // If user just returned from OAuth, send them to the journals page
+        try {
+          const currentPath = window.location.pathname || '/'
+          if (!currentPath || currentPath === '/') {
+            // replace location so the token isn't left in history
+            window.location.replace('/journals')
+            return
+          }
+        } catch (e) {
+          // ignore
+        }
         // remove token from URL to avoid leaking it in browser history
         url.searchParams.delete('token')
         url.searchParams.delete('username')

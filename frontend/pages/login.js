@@ -8,21 +8,41 @@ export default function Login() {
   async function submit(e) {
     e.preventDefault()
     const API_BASE = typeof process !== 'undefined' && process.env && process.env.NEXT_PUBLIC_API_BASE ? process.env.NEXT_PUBLIC_API_BASE : 'http://localhost:4000'
-    const r = await fetch(`${API_BASE}/api/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password })
-    })
-    const j = await r.json()
-    if (j.ok && j.token) {
-      localStorage.setItem('token', j.token)
-      if (j.user && j.user.username) localStorage.setItem('username', j.user.username)
-      // notify header and other parts of the app
-      window.dispatchEvent(new Event('authChanged'))
-      setMsg('Logged in')
-      window.location.href = '/journals'
-    } else {
-      setMsg(JSON.stringify(j))
+    try {
+      console.log('Attempting login to API_BASE=', API_BASE)
+      const r = await fetch(`${API_BASE}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      })
+
+      if (!r.ok) {
+        // Try to parse JSON error body, otherwise fallback to text
+        let body
+        try { body = await r.json() } catch (e) { body = await r.text().catch(() => '') }
+        console.error('Login failed', r.status, body)
+        const msgText = body && (body.error || body.message) ? (body.error || body.message) : JSON.stringify(body)
+        setMsg('Login failed: ' + (msgText || r.status))
+        return
+      }
+
+      const j = await r.json()
+      if (j.ok && j.token) {
+        localStorage.setItem('token', j.token)
+        if (j.user && j.user.username) localStorage.setItem('username', j.user.username)
+        // notify header and other parts of the app
+        window.dispatchEvent(new Event('authChanged'))
+        setMsg('Logged in')
+        window.location.href = '/journals'
+      } else {
+        console.error('Login response did not include token', j)
+        setMsg(JSON.stringify(j))
+      }
+    } catch (err) {
+      // Network-level error (CORS, DNS, server unreachable, etc.)
+      console.error('Network error during login fetch', err)
+      setMsg('Network error: ' + (err && err.message ? err.message : String(err)))
+      alert('Network error while attempting login. Open the browser console for details.')
     }
   }
 

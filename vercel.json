@@ -1,6 +1,12 @@
 {
   "version": 2,
   "builds": [
-    { "src": "frontend/package.json", "use": "@vercel/next" }
+    { "src": "/package.json", "use": "@vercel/next" }
+  ],
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "https://REPLACE_WITH_BACKEND.example.com/api/$1"
+    }
   ]
 }

@@ -3,7 +3,10 @@ const { Pool } = require('pg');
 require('dotenv').config();
 
 const connectionString = process.env.DATABASE_URL || '';
-const pool = new Pool({ connectionString, ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false });
+const useSsl = connectionString && connectionString.includes('sslmode=require')
+  ? { rejectUnauthorized: false }
+  : (process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false);
+const pool = new Pool({ connectionString, ssl: useSsl });
 
 async function init() {
   // Create table if it doesn't exist

@@ -26,7 +26,23 @@ async function login(req, res) {
   try {
     const { username, password } = req.body;
     if (!username || !password) return res.status(400).json({ error: 'username and password required' });
-    const user = await Users.findByUsername(username);
+    let user;
+    try {
+      user = await Users.findByUsername(username);
+    } catch (dbErr) {
+      // If DB is unavailable, allow a development fallback so login can be tested locally.
+      if (process.env.NODE_ENV !== 'production') {
+        console.warn('Database error while finding user; using dev fallback authentication', dbErr && (dbErr.message || dbErr));
+        const devUsers = { namrata: '1234', person: '1111' };
+        if (devUsers[username] && password === devUsers[username]) {
+          const token = jwt.sign({ userId: 999999 }, JWT_SECRET, { expiresIn: '7d' });
+          return res.json({ ok: true, user: { id: 999999, username }, token });
+        } else {
+          return res.status(401).json({ error: 'Invalid credentials' });
+        }
+      }
+      throw dbErr;
+    }
     if (!user) return res.status(401).json({ error: 'Invalid credentials' });
     const ok = await bcrypt.compare(password, user.password_hash);
     if (!ok) return res.status(401).json({ error: 'Invalid credentials' });
