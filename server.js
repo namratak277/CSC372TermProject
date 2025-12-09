@@ -3,6 +3,17 @@ const cors = require('cors');
 const { Pool } = require('pg');
 require('dotenv').config();
 
+// Catch all uncaught errors early
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught Exception:', err && (err.stack || err.message || err));
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  process.exit(1);
+});
+
 const app = express();
 const PORT = process.env.PORT || 4000;
 

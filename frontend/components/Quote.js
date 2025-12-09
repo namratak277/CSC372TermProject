@@ -1,47 +1,31 @@
 import { useEffect, useState } from 'react'
+import { quotes, getTotalQuotes } from '../data/quotes'
 
 export default function Quote() {
-  const [external, setExternal] = useState(null)
+  const [currentIndex, setCurrentIndex] = useState(0)
   const [saved, setSaved] = useState([])
-  const [externalError, setExternalError] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
 
   const API_BASE = typeof process !== 'undefined' && process.env && process.env.NEXT_PUBLIC_API_BASE ? process.env.NEXT_PUBLIC_API_BASE : 'http://localhost:4000'
-  const EXTERNAL_QUOTE_API = typeof process !== 'undefined' && process.env && process.env.NEXT_PUBLIC_QUOTE_API ? process.env.NEXT_PUBLIC_QUOTE_API : 'https://nodejs-quoteapp.herokuapp.com/quote'
 
-  async function loadExternal() {
-    // Call the external quote API directly (no backend proxy).
-    // This will fetch from NEXT_PUBLIC_QUOTE_API if set, otherwise nodejs-quoteapp.herokuapp.com
-    setExternalError(null)
-    setLoading(true)
-    try {
-      const url = `${EXTERNAL_QUOTE_API}${EXTERNAL_QUOTE_API.includes('?') ? '&' : '?'}cb=${Date.now()}`
-      const r = await fetch(url)
-      if (!r.ok) {
-        const txt = await r.text().catch(() => '')
-        setExternalError(`External API error: ${r.status} ${txt}`)
-        setExternal(null)
-        return
-      }
-      const data = await r.json()
-      const content = data.quote || data.content || data.text || data.message || ''
-      const author = data.author || data.person || ''
-      setExternal({ content: content || '', author: author || '' })
-      setExternalError(null)
-    } catch (err) {
-      console.error('Failed to fetch external quote directly', err)
-      setExternalError(err && (err.message || String(err)))
-      setExternal(null)
-    } finally {
-      setLoading(false)
-    }
+  const external = quotes[currentIndex]
+  const totalQuotes = getTotalQuotes()
+
+  function nextQuote() {
+    setCurrentIndex((prev) => (prev + 1) % totalQuotes)
   }
 
-  // Direct client-side fetch to the external API (/quote). This uses the
-  // snippet you provided but sets React state instead of writing to the DOM.
-  async function getRandomQuote() {
-    // Reuse loadExternal logic (keeps ordering of preferred sources)
-    await loadExternal()
+  function prevQuote() {
+    setCurrentIndex((prev) => (prev - 1 + totalQuotes) % totalQuotes)
+  }
+
+  function loadExternal() {
+    // Use local quotes - no network call needed
+    setCurrentIndex(Math.floor(Math.random() * totalQuotes))
+  }
+
+  function getRandomQuote() {
+    loadExternal()
   }
 
   async function loadSaved() {
@@ -75,8 +59,7 @@ export default function Quote() {
   }
 
   useEffect(() => {
-    setLoading(true)
-    Promise.all([loadExternal(), loadSaved()]).finally(() => setLoading(false))
+    loadSaved()
   }, [])
 
   async function saveExternal() {
