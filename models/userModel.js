@@ -46,12 +46,30 @@ async function createUser(username, passwordHash) {
 }
 
 // Create a user record from Google profile data
-async function createNewUser({ googleId, displayName, firstName, lastName, email }) {
-  const r = await pool.query(
-    'INSERT INTO users (google_id, display_name, first_name, last_name, email, password_hash) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, google_id, display_name, first_name, last_name, email, created_at',
-    [googleId, displayName, firstName, lastName, email, '']
-  );
-  return r.rows[0];
+async function createNewUser({ googleId, displayName, firstName, lastName, email, username }) {
+  // If no username provided, generate one from Google data
+  if (!username) {
+    username = displayName.replace(/\s+/g, '_').toLowerCase() || `user_${googleId}`;
+  }
+  
+  try {
+    const r = await pool.query(
+      'INSERT INTO users (google_id, display_name, first_name, last_name, email, password_hash, username) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id, google_id, display_name, first_name, last_name, email, username, created_at',
+      [googleId, displayName, firstName, lastName, email, '', username]
+    );
+    return r.rows[0];
+  } catch (err) {
+    // If username conflict, try with appended numbers
+    if (err.code === '23505' && err.constraint === 'users_username_key') {
+      const uniqueUsername = `${username}_${Date.now().toString().slice(-5)}`;
+      const r = await pool.query(
+        'INSERT INTO users (google_id, display_name, first_name, last_name, email, password_hash, username) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id, google_id, display_name, first_name, last_name, email, username, created_at',
+        [googleId, displayName, firstName, lastName, email, '', uniqueUsername]
+      );
+      return r.rows[0];
+    }
+    throw err;
+  }
 }
 
 async function getUserByGoogleId(googleId) {
