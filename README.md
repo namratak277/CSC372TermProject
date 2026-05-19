@@ -4,6 +4,8 @@ Demo link: https://uncg-my.sharepoint.com/:v:/r/personal/n_karki_uncg_edu/Docume
 
 Daily Diary is a fast, lightweight journaling application designed for busy students and employees to quickly record their thoughts and stay motivated with daily inspirational quotes.
 
+---
+
 Features
 Authentication
 * Sign up for a new account
@@ -17,6 +19,8 @@ Journal Management
 
 Motivational Quotes
 * Tried to use external api
+
+---
 
 Tools and web used
 
@@ -35,18 +39,23 @@ Database:
 External API:
 * Random Motivational Quotes API
 
+---
+
 REPOSITORY STRUCTURE
 
 /frontend    – Next.js client
 /backend     – Express server
 .env         – Root environment config
 
+---
 
 SETUP INSTRUCTIONS
 1. Clone the repository:
 
 git clone <your-repo-url>
 cd daily-diary
+
+---
 
 2. BACKEND SETUP (Express)
 cd backend
@@ -67,24 +76,30 @@ Using Neon:
 * Copy the connection string
 * Paste it into DATABASE_URL
 
+---
+
 3. FRONTEND SETUP (Next.js)
 cd frontend
 npm install
 npm run dev
 
+---
+
 Deployed  URLS
 Frontend (Vercel): https://csc-372-term-project.vercel.app/
 Backend: https://csc372termproject-production.up.railway.app/
 
+---
+
 Database
 
-users:
+users
 * id (primary key)
 * email
 * password_hash
 * created_at
 
-journals:
+journals
 * id (primary key)
 * user_id (foreign key → users.id)
 * title
@@ -92,17 +107,22 @@ journals:
 * created_at
 * updated_at
 
-Design tool
+---
 
+Design tools
 Frontend (Next.js)
 Backend (Express)
 Database (PostgreSQL + Neon)
+
+---
 
 Challanges
 * Trying to use an external API
 * Small changes to the code would break the entire project
 * Authentication and connecting it to the database
 * Getting the frontend and backend to worktogether 
+
+---
 
 Learning Outcomes
 * Understanding of full-stack architecture
@@ -111,6 +131,8 @@ Learning Outcomes
 * Deploying frontend and backend separately
 * Creating and manipulating databases
 * Git
+
+---
 
 Future ideas
 * Tagging or categories for journal entries

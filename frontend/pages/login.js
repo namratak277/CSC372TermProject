@@ -1,9 +1,34 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/router'
 
 export default function Login() {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [msg, setMsg] = useState('')
+  const router = useRouter()
+
+  // Handle Google OAuth callback
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    
+    const { token, username: googleUsername, error } = router.query
+    
+    if (error) {
+      setMsg('Google sign-in failed. Please try again or use traditional login.')
+      return
+    }
+    
+    if (token) {
+      // Store token from Google OAuth callback
+      localStorage.setItem('token', token)
+      if (googleUsername) localStorage.setItem('username', googleUsername)
+      window.dispatchEvent(new Event('authChanged'))
+      setMsg('Successfully signed in with Google!')
+      setTimeout(() => {
+        window.location.href = '/journals'
+      }, 500)
+    }
+  }, [router.query])
 
   async function submit(e) {
     e.preventDefault()
@@ -32,7 +57,7 @@ export default function Login() {
         if (j.user && j.user.username) localStorage.setItem('username', j.user.username)
         // notify header and other parts of the app
         window.dispatchEvent(new Event('authChanged'))
-        setMsg('Logged in')
+        setMsg('Logged in successfully')
         window.location.href = '/journals'
       } else {
         console.error('Login response did not include token', j)
@@ -47,33 +72,63 @@ export default function Login() {
   }
 
   return (
-      <div style={{ padding: 20 }}>
+      <div style={{ padding: 20, maxWidth: '400px', margin: '0 auto' }}>
         <h2>Log in</h2>
         <form onSubmit={submit}>
-          <div>
-            <label>Username</label>
-            <input value={username} onChange={e => setUsername(e.target.value)} />
+          <div style={{ marginBottom: 12 }}>
+            <label style={{ display: 'block', marginBottom: 4, fontWeight: 'bold' }}>Username</label>
+            <input 
+              value={username} 
+              onChange={e => setUsername(e.target.value)} 
+              style={{ width: '100%', padding: '8px', borderRadius: 4, border: '1px solid #ccc', boxSizing: 'border-box' }}
+            />
           </div>
-          <div>
-            <label>Password</label>
-            <input type="password" value={password} onChange={e => setPassword(e.target.value)} />
+          <div style={{ marginBottom: 12 }}>
+            <label style={{ display: 'block', marginBottom: 4, fontWeight: 'bold' }}>Password</label>
+            <input 
+              type="password" 
+              value={password} 
+              onChange={e => setPassword(e.target.value)} 
+              style={{ width: '100%', padding: '8px', borderRadius: 4, border: '1px solid #ccc', boxSizing: 'border-box' }}
+            />
           </div>
-          <button type="submit">Log in</button>
+          <button 
+            type="submit" 
+            style={{ width: '100%', padding: '10px', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer', fontWeight: 'bold' }}
+          >
+            Log in
+          </button>
         </form>
-        <div style={{ marginTop: 16 }}>
-          <div style={{ marginBottom: 8 }}>Or</div>
-          {/* Google OAuth start - opens backend endpoint which will redirect back with a token */}
+        
+        <div style={{ marginTop: 20, paddingTop: 20, borderTop: '1px solid #eee' }}>
+          <div style={{ marginBottom: 12, textAlign: 'center', color: '#666' }}>Or sign in with</div>
           <a
             href={(typeof process !== 'undefined' && process.env && process.env.NEXT_PUBLIC_API_BASE ? process.env.NEXT_PUBLIC_API_BASE : 'http://localhost:4000') + '/api/auth/google'}
-            style={{ display: 'inline-block', padding: '8px 12px', background: 'var(--accent)', color: '#fff', borderRadius: 4, textDecoration: 'none' }}
+            style={{ 
+              display: 'block', 
+              padding: '12px', 
+              background: '#4285F4', 
+              color: '#fff', 
+              borderRadius: 4, 
+              textDecoration: 'none',
+              textAlign: 'center',
+              fontWeight: 'bold',
+              marginBottom: 12
+            }}
           >
-            Continue with Google
+            🔐 Sign in with Google
           </a>
         </div>
-        <div style={{ marginTop: 12 }}>
-          <a href="/forgot">Forgot password?</a>
+
+        <div style={{ marginTop: 16, textAlign: 'center' }}>
+          <a href="/forgot" style={{ color: 'var(--accent)', textDecoration: 'none' }}>Forgot password?</a>
         </div>
-        <pre>{msg}</pre>
+
+        {msg && (
+          <div style={{ marginTop: 16, padding: 12, background: '#f5f5f5', borderRadius: 4, color: '#d32f2f', fontSize: '14px' }}>
+            {msg}
+          </div>
+        )}
       </div>
   )
 }

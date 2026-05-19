@@ -19,38 +19,41 @@ router.get('/me', auth, controller.me);
 
 // Google OAuth start
 router.get('/google', (req, res, next) => {
-		// If passport not configured or Google strategy missing, return 501
-		const googleReady = passport && (passport.googleConfigured || (passport._strategies && passport._strategies.google));
-		if (!googleReady) return res.status(501).json({ error: 'OAuth not configured' });
+	// If passport not configured or Google strategy missing, return 501
+	const googleReady = passport && (passport.googleConfigured || (passport._strategies && passport._strategies.google));
+	if (!googleReady) {
+		console.warn('Google OAuth requested but not configured. Missing GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET');
+		return res.status(501).json({ error: 'OAuth not configured. Please set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET.' });
+	}
 
-		// Build the Google OAuth URL explicitly to ensure `scope` is always present
-		try {
-			const clientId = process.env.clientID || process.env.GOOGLE_CLIENT_ID;
-			if (!clientId) {
-				console.error('Google OAuth start attempted but client ID is missing');
-				return res.status(500).json({ error: 'Google client ID not configured on server' });
-			}
-			const callbackPath = process.env.callbackURL || process.env.GOOGLE_CALLBACK_URL || '/api/auth/google/callback';
-			const backendBase = process.env.BACKEND_URL || process.env.BASE_URL || (`http://localhost:${process.env.PORT || 4000}`);
-			const redirectUri = callbackPath.startsWith('/') ? backendBase.replace(/\/$/, '') + callbackPath : callbackPath;
-			const params = new URLSearchParams({
-				client_id: clientId,
-				redirect_uri: redirectUri,
-				response_type: 'code',
-				scope: 'profile email',
-				access_type: 'online',
-				include_granted_scopes: 'true',
-				prompt: 'select_account'
-			});
-			const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
-			if (process.env.NODE_ENV !== 'production') {
-				console.log('Redirecting to Google OAuth URL:', authUrl);
-			}
-			return res.redirect(authUrl);
-		} catch (err) {
-			console.error('Failed to build Google auth URL', err);
-			return res.status(500).json({ error: 'Failed to start OAuth' });
+	// Build the Google OAuth URL explicitly to ensure `scope` is always present
+	try {
+		const clientId = process.env.clientID || process.env.GOOGLE_CLIENT_ID;
+		if (!clientId) {
+			console.error('Google OAuth start attempted but client ID is missing');
+			return res.status(500).json({ error: 'Google client ID not configured on server' });
 		}
+		const callbackPath = process.env.callbackURL || process.env.GOOGLE_CALLBACK_URL || '/api/auth/google/callback';
+		const backendBase = process.env.BACKEND_URL || process.env.BASE_URL || (`http://localhost:${process.env.PORT || 4000}`);
+		const redirectUri = callbackPath.startsWith('/') ? backendBase.replace(/\/$/, '') + callbackPath : callbackPath;
+		const params = new URLSearchParams({
+			client_id: clientId,
+			redirect_uri: redirectUri,
+			response_type: 'code',
+			scope: 'profile email',
+			access_type: 'online',
+			include_granted_scopes: 'true',
+			prompt: 'select_account'
+		});
+		const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
+		if (process.env.NODE_ENV !== 'production') {
+			console.log('Redirecting to Google OAuth URL:', authUrl);
+		}
+		return res.redirect(authUrl);
+	} catch (err) {
+		console.error('Failed to build Google auth URL', err);
+		return res.status(500).json({ error: 'Failed to start OAuth' });
+	}
 });
 
 // Google OAuth callback
