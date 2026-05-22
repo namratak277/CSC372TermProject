@@ -110,9 +110,23 @@ GOOGLE_CLIENT_SECRET=xyz789abc...
 
 ### Step 5: Test Google OAuth Setup (Optional)
 
-Once the backend is running, visit:
+Before you test this step, make sure the backend is running in a separate terminal:
+
+```bash
+npm run dev:backend
+```
+
+If you open the URL before the server starts, the browser will show `ERR_CONNECTION_REFUSED`.
+
+Then visit:
 ```
 http://localhost:4000/api/auth/debug
+```
+
+If you prefer the terminal, this works too:
+
+```bash
+curl http://localhost:4000/api/auth/debug
 ```
 
 You should see:
@@ -293,6 +307,20 @@ Try accessing `/journals` without logging in:
 ---
 
 ## Troubleshooting
+
+### `nodemon` is not recognized
+
+This usually means the root dependencies have not been installed yet.
+
+**Fix:**
+```bash
+npm install
+```
+
+Then start the backend again:
+```bash
+npm run dev:backend
+```
 
 ### Google Sign-In Not Working
 
