@@ -148,18 +148,19 @@ Use this checklist to verify everything is working before deploying to productio
 - [ ] Build succeeds on Vercel
 - [ ] Frontend is accessible at production URL
 
-### Backend Deployment (Railway)
+### Backend Deployment (Render)
 - [ ] Repository is pushed to GitHub
-- [ ] Railway project is created and connected
-- [ ] Environment variables are set in Railway:
+- [ ] Render web service is created and connected
+- [ ] Environment variables are set in Render:
   - [ ] `DATABASE_URL` (production database)
   - [ ] `JWT_SECRET` (strong secret)
   - [ ] `GOOGLE_CLIENT_ID`
   - [ ] `GOOGLE_CLIENT_SECRET`
   - [ ] `FRONTEND_URL` (production frontend URL)
+  - [ ] `BACKEND_URL` (your Render backend URL)
   - [ ] `GOOGLE_CALLBACK_URL` (production callback URL)
   - [ ] `PORT=4000`
-- [ ] Build succeeds on Railway
+- [ ] Build succeeds on Render
 - [ ] Backend is accessible at production URL
 - [ ] Production health check passes:
   ```bash
@@ -169,7 +170,7 @@ Use this checklist to verify everything is working before deploying to productio
 ### Google OAuth Production
 - [ ] Production redirect URI is added to Google Cloud Console:
   ```
-  https://your-backend-url.com/api/auth/google/callback
+  https://your-render-service.onrender.com/api/auth/google/callback
   ```
 - [ ] Google OAuth still works after deployment
 - [ ] Users can sign in with Google in production

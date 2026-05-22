@@ -381,6 +381,10 @@ psql $DATABASE_URL -c "SELECT 1"
 
 Should return `1`
 
+DATABASE_URL -c "SELECT 1"
+Command 'psql' not found, but can be installed with:
+sudo apt install postgresql-client-common
+
 **Check 3: For Neon users**
 - Log into https://console.neon.tech/
 - Check if database is in "Active" state
@@ -422,8 +426,8 @@ Once testing is complete, you can deploy:
    - `NEXT_PUBLIC_QUOTE_API` → Your backend URL/api/quotes/random
 5. Deploy!
 
-### Backend (Railway)
-1. Go to [Railway](https://railway.app/)
+### Backend (Render)
+1. Go to [Render](https://render.com/)
 2. Create new project
 3. Connect GitHub repository
 4. Add environment variables:
@@ -432,14 +436,16 @@ Once testing is complete, you can deploy:
    - `GOOGLE_CLIENT_ID`
    - `GOOGLE_CLIENT_SECRET`
    - `FRONTEND_URL` → Your Vercel frontend URL
+   - `BACKEND_URL` → Your Render backend URL
+   - `GOOGLE_CALLBACK_URL` → `https://your-render-service.onrender.com/api/auth/google/callback`
 5. Deploy!
 
 ### Google OAuth Production Setup
 1. In Google Cloud Console, add production redirect URI:
    ```
-   https://your-production-url.com/api/auth/google/callback
+   https://your-render-service.onrender.com/api/auth/google/callback
    ```
-2. Update production `.env` with new callback URL
+2. Update production `.env` with the same callback URL if you are not using `GOOGLE_CALLBACK_URL`
 
 ---
 

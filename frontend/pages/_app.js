@@ -1,6 +1,8 @@
 import '../styles/styles.css'
 import { useEffect } from 'react'
-import Header from '../components/Header'
+import dynamic from 'next/dynamic'
+
+const Header = dynamic(() => import('../components/Header'), { ssr: false })
 
 function AppLayout({ children }) {
   useEffect(() => {

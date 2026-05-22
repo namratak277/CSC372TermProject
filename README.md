@@ -31,7 +31,7 @@ Frontend:
 Backend:
 * Node.js and Express
 * Authentication using JWT
-* Deployed on a Node hosting provider (Render, Railway, Fly.io, etc.)
+* Deployed on a Node hosting provider (Render, Fly.io, etc.)
 
 Database:
 * PostgreSQL using Neon
@@ -87,7 +87,7 @@ npm run dev
 
 Deployed  URLS
 Frontend (Vercel): https://csc-372-term-project.vercel.app/
-Backend: https://csc372termproject-production.up.railway.app/
+Backend: your Render service URL
 
 ---
 

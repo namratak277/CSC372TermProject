@@ -1,1 +1,1 @@
-self.__REACT_LOADABLE_MANIFEST="{}"
+self.__REACT_LOADABLE_MANIFEST='{"pages\\\\_app.js -> ../components/Header":{"id":4954,"files":["static/chunks/664-d254d21a6fe56bff.js","static/chunks/954.fef1f919a6ba38bd.js"]}}';

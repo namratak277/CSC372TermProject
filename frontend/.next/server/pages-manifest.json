@@ -1,8 +1,1 @@
-{
-  "/_app": "pages/_app.js",
-  "/_error": "pages/_error.js",
-  "/_document": "pages/_document.js",
-  "/": "pages/index.js",
-  "/login": "pages/login.js",
-  "/journals": "pages/journals.js"
-}
+{"/_app":"pages/_app.js","/_error":"pages/_error.js","/":"pages/index.html","/journals/[id]":"pages/journals/[id].html","/forgot":"pages/forgot.html","/journals":"pages/journals.html","/login":"pages/login.html","/logout":"pages/logout.html","/reset/[token]":"pages/reset/[token].html","/signup":"pages/signup.html","/_document":"pages/_document.js","/404":"pages/404.html"}
