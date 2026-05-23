@@ -1,7 +1,8 @@
+import dynamic from 'next/dynamic'
 import { useRouter } from 'next/router'
 import { useState, useEffect } from 'react'
 
-export default function ResetPage() {
+function ResetPage() {
   const router = useRouter()
   const { token } = router.query
   const [password, setPassword] = useState('')
@@ -47,3 +48,5 @@ export default function ResetPage() {
     </div>
   )
 }
+
+export default dynamic(() => Promise.resolve(ResetPage), { ssr: false })

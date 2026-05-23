@@ -1,8 +1,9 @@
+import dynamic from 'next/dynamic'
 import { useEffect, useState } from 'react'
 import JournalEntry from '../../components/JournalEntry'
 import Quote from '../../components/Quote'
 
-export default function Journals() {
+function Journals() {
   const [items, setItems] = useState([])
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
@@ -250,3 +251,5 @@ export default function Journals() {
       </div>
   )
 }
+
+export default dynamic(() => Promise.resolve(Journals), { ssr: false })

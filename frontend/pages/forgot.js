@@ -1,6 +1,7 @@
+import dynamic from 'next/dynamic'
 import { useState } from 'react'
 
-export default function Forgot() {
+function Forgot() {
   const [username, setUsername] = useState('')
   const [msg, setMsg] = useState('')
   const [token, setToken] = useState(null)
@@ -47,3 +48,5 @@ export default function Forgot() {
     </div>
   )
 }
+
+export default dynamic(() => Promise.resolve(Forgot), { ssr: false })

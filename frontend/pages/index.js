@@ -1,6 +1,7 @@
+import dynamic from 'next/dynamic'
 import Link from 'next/link'
 
-export default function Home() {
+function Home() {
   return (
       <div style={{ padding: 20 }}>
         <h1>Daily Diary</h1>
@@ -27,3 +28,5 @@ export default function Home() {
       </div>
   )
 }
+
+export default dynamic(() => Promise.resolve(Home), { ssr: false })

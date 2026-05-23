@@ -1,6 +1,7 @@
+import dynamic from 'next/dynamic'
 import { useState } from 'react'
 
-export default function Signup() {
+function Signup() {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [msg, setMsg] = useState('')
@@ -62,3 +63,5 @@ export default function Signup() {
       </div>
   )
 }
+
+export default dynamic(() => Promise.resolve(Signup), { ssr: false })

@@ -1,7 +1,8 @@
+import dynamic from 'next/dynamic'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
 
-export default function Login() {
+function Login() {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [msg, setMsg] = useState('')
@@ -132,3 +133,5 @@ export default function Login() {
       </div>
   )
 }
+
+export default dynamic(() => Promise.resolve(Login), { ssr: false })

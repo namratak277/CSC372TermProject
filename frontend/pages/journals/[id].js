@@ -1,7 +1,8 @@
+import dynamic from 'next/dynamic'
 import { useRouter } from 'next/router'
 import { useEffect, useState } from 'react'
 
-export default function EditJournal() {
+function EditJournal() {
   const router = useRouter()
   const { id } = router.query
   const [title, setTitle] = useState('')
@@ -117,3 +118,5 @@ export default function EditJournal() {
       </div>
   )
 }
+
+export default dynamic(() => Promise.resolve(EditJournal), { ssr: false })
