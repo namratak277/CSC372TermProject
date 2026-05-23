@@ -17,6 +17,11 @@ process.on('unhandledRejection', (reason, promise) => {
 const app = express();
 const PORT = process.env.PORT || 4000;
 
+function normalizeOrigin(url) {
+  // Browsers send Origin without trailing slash; normalize env input to match.
+  return (url || '').trim().replace(/\/+$/, '');
+}
+
 // Basic startup env logging (non-sensitive)
 console.log('Startup: FRONTEND_URL =', process.env.FRONTEND_URL || 'http://localhost:3000');
 console.log('Startup: PORT =', PORT);
@@ -32,9 +37,9 @@ if (process.env.DATABASE_URL) {
   console.warn('Startup: DATABASE_URL is not set');
 }
 
-// Allow CORS from the frontend during development. Set FRONTEND_URL in .env if different.
-// Allow CORS from the frontend and support credentials for session cookies
-app.use(cors({ origin: process.env.FRONTEND_URL || 'http://localhost:3000', credentials: true }));
+// Allow CORS from the frontend and support credentials for session cookies.
+const frontendOrigin = normalizeOrigin(process.env.FRONTEND_URL || 'http://localhost:3000');
+app.use(cors({ origin: frontendOrigin, credentials: true }));
 
 // Simple request logger to help debug incoming requests
 app.use((req, res, next) => {
@@ -88,7 +93,7 @@ app.use('/api/habits', habitsRouter);
 // Root route: redirect to frontend dev server or provide info
 app.get('/', (req, res) => {
   // If frontend is running on port 3000, redirect there for convenience
-  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+  const frontendUrl = frontendOrigin || 'http://localhost:3000';
   // Redirecting keeps browser UX simple when visiting backend root
   res.redirect(frontendUrl);
 });
