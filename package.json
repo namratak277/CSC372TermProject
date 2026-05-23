@@ -5,12 +5,12 @@
   "main": "server.js",
   "scripts": {
     "dev:backend": "nodemon server.js",
-    "dev:frontend": "cd frontend && next dev",
-    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "dev": "concurrently \"npm run dev:backend\" \"npm --prefix frontend run dev\"",
     "seed": "node scripts/seed.js",
     "start": "node server.js",
-    "build": "cd frontend && next build",
-    "start:frontend": "cd frontend && next start",
+    "build": "npm --prefix frontend run build",
+    "start:frontend": "npm --prefix frontend run start",
     "test-db": "node scripts/test-db.js"
   },
   "dependencies": {
