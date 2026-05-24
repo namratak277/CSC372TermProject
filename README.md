@@ -78,3 +78,116 @@ Lessons learned:
 - Root `package.json` — removed Next/React deps from root so frontend package owns them.
 - Removed tracked `frontend/.env.local` and added `frontend/.gitignore`.
 
+---
+
+## Project Overview
+
+Short structure summary for Daily Diary:
+
+- `server.js` — Express backend entry (CORS, sessions, passport, route mounting).
+- `package.json` (root) — backend scripts and helper scripts to run frontend tasks.
+- `vercel.json` — Vercel rewrites and frontend env passthrough.
+- `frontend/` — Next.js application (UI): pages, components, styles, and its own `package.json`.
+- `auth/` — passport configuration and auth helpers.
+- `routes/` — Express routers: `auth`, `journals`, `habits`, `quotes`.
+- `controllers/` — controller logic used by routes.
+- `models/` — DB model modules using `pg`.
+- `scripts/` — small helper scripts (e.g., `seed.js`).
+- Docs: `README.md`, `SETUP_GUIDE.md`, `CHECKLIST.md` (some may be removed).
+
+Notes:
+- Backend and frontend are split: frontend is a Next.js app under `frontend/` and must own Next/React dependencies.
+- Environment variables for production must be set in Vercel (frontend) and Render (backend). `NEXT_PUBLIC_*` variables are baked at build time.
+
+---
+
+## File Purposes
+
+This section lists the main files and what they do.
+
+- `server.js`: Express app setup (CORS normalization, sessions, passport init, route mounting, DB init, error handler).
+- `package.json` (root): backend dependencies and cross-root scripts (`npm --prefix frontend` used to call frontend commands).
+- `vercel.json`: production rewrites for `/api/*` to backend and optional env keys for build.
+- `auth/passport.js`: configures `passport-google-oauth20` strategy and serialization.
+- `routes/auth.js`: auth endpoints: `/debug`, `/google`, `/google/callback`, `/login`, `/signup`.
+- `controllers/authController.js`: handlers for signup/login and token creation.
+- `models/*.js`: DB wrappers around `pg` Pool for users, journals, habits, quotes.
+- `routes/journals.js` + `controllers/journalController.js` + `models/journalModel.js`: CRUD for journal entries.
+- `frontend/package.json`: Next.js app deps and scripts.
+- `frontend/pages/*`: Next pages — `_app.js` (global layout), `index.js`, `login.js`, `journals/*`, `reset/*`, etc.
+- `frontend/components/*`: UI components (`Header.js`, `JournalEntry.js`, `Quote.js`).
+- `frontend/styles/*`: CSS for the frontend.
+- `scripts/seed.js`: seeds sample data for development.
+
+---
+
+## Restart scaffold
+
+If you were to restart the project, create these minimal files and contents.
+
+1) `package.json` (root) — scripts and backend deps
+
+```json
+{
+	"name": "daily-diary",
+	"private": true,
+	"scripts": {
+		"dev:backend": "nodemon server.js",
+		"dev:frontend": "npm --prefix frontend run dev",
+		"dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+		"start": "node server.js",
+		"build": "npm --prefix frontend run build"
+	}
+}
+```
+
+2) `server.js` (minimal)
+
+```js
+const express = require('express');
+const cors = require('cors');
+require('dotenv').config();
+
+const app = express();
+const FRONTEND = (process.env.FRONTEND_URL||'http://localhost:3000').replace(/\/+$/,'');
+app.use(cors({ origin: FRONTEND, credentials: true }));
+app.use(express.json());
+
+app.use('/api/auth', require('./routes/auth'));
+app.use('/api/journals', require('./routes/journals'));
+
+app.listen(process.env.PORT||4000, ()=> console.log('listening'));
+```
+
+3) `auth/passport.js` — configure GoogleStrategy and serialize user. See passport docs.
+
+4) `routes/auth.js` — router that exposes `/debug`, `/google`, `/google/callback`, `/login`, `/signup`.
+
+5) `models/userModel.js` — a tiny wrapper around `pg` Pool with `findById`, `create`, and `findOrCreateFromGoogle`.
+
+6) `frontend/` — create Next app with `npx create-next-app frontend` and add pages/components listed above.
+
+7) `.env.example` — include `DATABASE_URL`, `JWT_SECRET`, `SESSION_SECRET`, `FRONTEND_URL`, `GOOGLE_*` keys.
+
+Notes: use small modules (routes → controllers → models) and keep `NEXT_PUBLIC_*` env vars set in Vercel before building.
+
+---
+
+## Deploy notes (quick checklist)
+
+- Frontend (Vercel):
+	- Set Project Root Directory = `frontend`.
+	- Set `NEXT_PUBLIC_API_BASE` to your backend URL before building.
+	- Install Command: `npm install`
+	- Build Command: `npm run build`
+
+- Backend (Render):
+	- Set `START` to `npm start`.
+	- Env vars: `DATABASE_URL`, `FRONTEND_URL` (no trailing slash), `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_CALLBACK_URL`, `JWT_SECRET`, `SESSION_SECRET`, `NODE_ENV=production`.
+
+Important tips:
+- `NEXT_PUBLIC_*` vars are baked at build time — set them in Vercel.
+- Normalize `FRONTEND_URL` in `server.js` to avoid trailing slash CORS problems.
+- Remove committed `.env.local` files from repo to prevent local values leaking into production builds.
+
+
