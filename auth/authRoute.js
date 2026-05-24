@@ -34,7 +34,6 @@ router.get("/logout", function (req, res, next) {
     if (err) {
       return next(err);
     }
-    // Destroy the session to clear the session cookie
     req.session.destroy((sessionErr) => {
       if (sessionErr) {
         return res.status(500).json({ message: 'Error destroying session' });

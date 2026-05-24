@@ -4,7 +4,6 @@ const axios = require('axios');
 const Quote = require('../models/quoteModel');
 const auth = require('../auth');
 
-// Helper to retry transient network errors (DNS issues like EAI_AGAIN) a few times
 async function fetchWithRetries(url, axiosOptions = {}, retries = 3, delayMs = 300) {
   let attempt = 0;
   while (true) {
@@ -14,7 +13,6 @@ async function fetchWithRetries(url, axiosOptions = {}, retries = 3, delayMs = 3
     } catch (err) {
       attempt++;
       const code = err && (err.code || (err.response && err.response.status));
-      // Consider retrying for DNS/network transient errors
       const retryable = err && (err.code === 'EAI_AGAIN' || err.code === 'ENOTFOUND' || err.code === 'ECONNRESET' || err.code === 'ETIMEDOUT');
       if (!retryable || attempt > retries) {
         throw err;

@@ -30,7 +30,6 @@ async function login(req, res) {
     try {
       user = await Users.findByUsername(username);
     } catch (dbErr) {
-      // If DB is unavailable, allow a development fallback so login can be tested locally.
       if (process.env.NODE_ENV !== 'production') {
         console.warn('Database error while finding user; using dev fallback authentication', dbErr && (dbErr.message || dbErr));
         const devUsers = { namrata: '1234', person: '1111' };
@@ -70,13 +69,11 @@ async function forgot(req, res) {
     if (!username) return res.status(400).json({ error: 'username required' });
     const user = await Users.findByUsername(username);
     if (!user) {
-      // don't reveal whether user exists
       return res.json({ ok: true });
     }
     const token = crypto.randomBytes(32).toString('hex');
     const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
     await Users.setResetToken(user.id, token, expires);
-    // In production, send token via email. For local/dev return token so tester can use it.
     console.log('Password reset token for', username, token);
     res.json({ ok: true, token });
   } catch (err) {

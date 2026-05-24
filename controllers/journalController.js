@@ -2,10 +2,9 @@ const Journal = require('../models/journalModel');
 
 async function list(req, res) {
   try {
-    // If authentication is used, return only this user's journals
     if (req.user && req.user.id) {
       const items = await Journal.getAll();
-      // filter for this user (coerce types to avoid string/number mismatch)
+      // filter for this user
       const uid = Number(req.user.id);
       const filtered = items.filter(i => Number(i.user_id) === uid);
       return res.json(filtered);

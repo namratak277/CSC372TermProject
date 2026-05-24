@@ -3,12 +3,10 @@ const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const Users = require('../models/userModel');
 
-// Support multiple env var names used across setups
 const GOOGLE_CLIENT_ID = process.env.clientID || process.env.GOOGLE_CLIENT_ID;
 const GOOGLE_CLIENT_SECRET = process.env.clientSecret || process.env.GOOGLE_CLIENT_SECRET;
 let GOOGLE_CALLBACK_URL = process.env.callbackURL || process.env.GOOGLE_CALLBACK_URL || '/api/auth/google/callback';
 
-// Ensure callback URL is absolute. If it's a path, prefix with BACKEND_URL or localhost with PORT.
 if (GOOGLE_CALLBACK_URL && GOOGLE_CALLBACK_URL.startsWith('/')) {
   const backendBase = process.env.BACKEND_URL || process.env.BASE_URL || (`http://localhost:${process.env.PORT || 4000}`);
   GOOGLE_CALLBACK_URL = backendBase.replace(/\/$/, '') + GOOGLE_CALLBACK_URL;
@@ -25,13 +23,10 @@ if (GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET) {
       let user = await Users.getUserByGoogleId(googleId);
       
       if (!user) {
-        // Create new user from Google profile
         const displayName = profile.displayName || '';
         const firstName = (profile.name && profile.name.givenName) || '';
         const lastName = (profile.name && profile.name.familyName) || '';
         const email = (profile.emails && profile.emails[0] && profile.emails[0].value) || null;
-        
-        // Generate a unique username from Google profile data
         let username = displayName.replace(/\s+/g, '_').toLowerCase() || `user_${googleId}`;
         
         user = await Users.createNewUser({ 
@@ -69,7 +64,6 @@ if (GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET) {
   passport.googleConfigured = false;
 }
 
-// Startup logs for easier diagnosis
 if (passport.googleConfigured) {
   console.log('✅ Google OAuth: CONFIGURED');
   console.log('   Callback URL:', GOOGLE_CALLBACK_URL);

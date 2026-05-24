@@ -1,0 +1,12 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "https://dailydiary-gxrn.onrender.com/api/$1"
+    }
+  ],
+  "env": {
+    "NEXT_PUBLIC_API_BASE": "https://dailydiary-gxrn.onrender.com",
+    "NEXT_PUBLIC_QUOTE_API": "https://dailydiary-gxrn.onrender.com/api/quotes/random"
+  }
+}
